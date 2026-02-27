@@ -121,6 +121,23 @@ class CheckCommandTest extends CommandTestCase
         $this->assertStringContainsString('Connection failed', $tester->getDisplay());
     }
 
+    public function test_exception_message_redacts_credentials(): void
+    {
+        // Simulate an exception that contains the API key in its message
+        // (e.g. Guzzle including credentials in a request URL or header dump).
+        $this->api->method('post')->willThrowException(
+            new \RuntimeException('Request to https://api.example.com?key=test-key failed for user test-user')
+        );
+
+        $tester = $this->createTester(new CheckCommand());
+        $tester->execute(['domains' => ['example.com']]);
+
+        $output = $tester->getDisplay();
+        $this->assertStringNotContainsString('test-key', $output);
+        $this->assertStringNotContainsString('test-user', $output);
+        $this->assertStringContainsString('***', $output);
+    }
+
     public function test_not_configured(): void
     {
         $tester = $this->createUnconfiguredTester(new CheckCommand());

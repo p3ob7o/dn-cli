@@ -39,7 +39,11 @@ abstract class CommandTestCase extends TestCase
     {
         putenv('DN_API_KEY=test-key');
         putenv('DN_API_USER=test-user');
-        $command->setApi($this->api);
+
+        // Re-create the command with the mock API injected via constructor
+        // (BaseCommand accepts ?Api as second constructor parameter).
+        $commandClass = get_class($command);
+        $command = new $commandClass(null, $this->api);
 
         $app = new Application();
         $app->add($command);

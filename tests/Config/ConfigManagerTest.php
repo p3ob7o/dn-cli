@@ -246,4 +246,38 @@ class ConfigManagerTest extends TestCase
         $config = new ConfigManager();
         $this->assertNull($config->getApiKey());
     }
+
+    public function test_save_creates_file_with_restrictive_permissions_before_writing(): void
+    {
+        // Verify the TOCTOU fix: file should never exist with loose permissions.
+        // After save(), the file must have 0600 and contain the correct data.
+        $config = new ConfigManager();
+        $config->save('secret-key', 'secret-user');
+
+        $path = $config->getConfigPath();
+
+        // Permissions must be 0600
+        $perms = fileperms($path) & 0777;
+        $this->assertSame(0600, $perms);
+
+        // Content must be correct (written after chmod)
+        $data = json_decode(file_get_contents($path), true);
+        $this->assertSame('secret-key', $data['api_key']);
+        $this->assertSame('secret-user', $data['api_user']);
+    }
+
+    public function test_save_overwrites_existing_config(): void
+    {
+        $config = new ConfigManager();
+        $config->save('old-key', 'old-user');
+        $config->save('new-key', 'new-user');
+
+        $path = $config->getConfigPath();
+        $data = json_decode(file_get_contents($path), true);
+        $this->assertSame('new-key', $data['api_key']);
+
+        // Permissions must still be restrictive after overwrite
+        $perms = fileperms($path) & 0777;
+        $this->assertSame(0600, $perms);
+    }
 }

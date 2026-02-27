@@ -57,7 +57,7 @@ class DnsGetCommand extends BaseCommand
                 $io->table(['Type', 'Name', 'Value', 'TTL'], $rows);
             }
         } catch (\Exception $e) {
-            $io->error('Error: ' . $e->getMessage());
+            $io->error('Error: ' . $this->sanitizeErrorMessage($e->getMessage()));
             return self::FAILURE;
         }
 

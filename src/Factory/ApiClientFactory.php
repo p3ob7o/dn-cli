@@ -22,6 +22,9 @@ class ApiClientFactory
 
         $apiUrl = $config->getApiUrl();
         if ($apiUrl !== null) {
+            if (!str_starts_with($apiUrl, 'https://')) {
+                throw new \InvalidArgumentException('API URL must use HTTPS.');
+            }
             $configuration->set_host($apiUrl);
         }
 

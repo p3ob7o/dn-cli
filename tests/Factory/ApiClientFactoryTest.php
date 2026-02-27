@@ -44,4 +44,14 @@ class ApiClientFactoryTest extends TestCase
         $api = ApiClientFactory::create($config);
         $this->assertInstanceOf(Api::class, $api);
     }
+
+    public function test_rejects_http_url(): void
+    {
+        putenv('DN_API_URL=http://insecure.example.com/api');
+        $config = new ConfigManager();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('API URL must use HTTPS');
+        ApiClientFactory::create($config);
+    }
 }

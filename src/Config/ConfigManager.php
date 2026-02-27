@@ -47,12 +47,17 @@ class ConfigManager
             $data['api_url'] = $apiUrl;
         }
 
+        $path = $this->getConfigPath();
+
+        // Set restrictive permissions before writing to avoid TOCTOU race
+        // where credentials could be briefly readable by other users.
+        touch($path);
+        chmod($path, 0600);
+
         file_put_contents(
-            $this->getConfigPath(),
+            $path,
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
         );
-
-        chmod($this->getConfigPath(), 0600);
 
         // Reset cached config
         $this->config = null;

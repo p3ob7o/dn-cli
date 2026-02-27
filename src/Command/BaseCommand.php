@@ -15,17 +15,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 abstract class BaseCommand extends Command
 {
     protected ConfigManager $configManager;
-    private ?Api $apiOverride = null;
+    private ?Api $api;
 
-    public function __construct(?ConfigManager $configManager = null)
+    public function __construct(?ConfigManager $configManager = null, ?Api $api = null)
     {
         $this->configManager = $configManager ?? new ConfigManager();
+        $this->api = $api;
         parent::__construct();
-    }
-
-    public function setApi(Api $api): void
-    {
-        $this->apiOverride = $api;
     }
 
     protected function requiresConfig(): bool
@@ -49,10 +45,30 @@ abstract class BaseCommand extends Command
 
     protected function createApi(): Api
     {
-        if ($this->apiOverride !== null) {
-            return $this->apiOverride;
+        if ($this->api !== null) {
+            return $this->api;
         }
 
         return ApiClientFactory::create($this->configManager);
+    }
+
+    /**
+     * Redact known credential values from error messages to prevent
+     * accidental leakage via exception output (e.g. Guzzle including
+     * API keys in request URLs or headers).
+     */
+    protected function sanitizeErrorMessage(string $message): string
+    {
+        $apiKey = $this->configManager->getApiKey();
+        $apiUser = $this->configManager->getApiUser();
+
+        if ($apiKey !== null) {
+            $message = str_replace($apiKey, '***', $message);
+        }
+        if ($apiUser !== null) {
+            $message = str_replace($apiUser, '***', $message);
+        }
+
+        return $message;
     }
 }

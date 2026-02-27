@@ -46,7 +46,7 @@ class TransferlockCommand extends BaseCommand
                 return self::FAILURE;
             }
         } catch (\Exception $e) {
-            $io->error('Error: ' . $e->getMessage());
+            $io->error('Error: ' . $this->sanitizeErrorMessage($e->getMessage()));
             return self::FAILURE;
         }
 
