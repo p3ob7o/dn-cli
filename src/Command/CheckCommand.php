@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DnCli\Command;
+
+use Automattic\Domain_Services_Client\Command\Domain\Check;
+use Automattic\Domain_Services_Client\Entity\Domain_Name;
+use Automattic\Domain_Services_Client\Entity\Domain_Names;
+use Automattic\Domain_Services_Client\Response\Domain\Check as CheckResponse;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+class CheckCommand extends BaseCommand
+{
+    protected function configure(): void
+    {
+        $this
+            ->setName('check')
+            ->setDescription('Check domain availability and pricing')
+            ->addArgument('domains', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'Domain name(s) to check');
+    }
+
+    protected function handle(InputInterface $input, OutputInterface $output, SymfonyStyle $io): int
+    {
+        $domainArgs = $input->getArgument('domains');
+        $domainNames = new Domain_Names();
+
+        foreach ($domainArgs as $name) {
+            $domainNames->add_domain_name(new Domain_Name($name));
+        }
+
+        try {
+            $api = $this->createApi();
+            $command = new Check($domainNames);
+            /** @var CheckResponse $response */
+            $response = $api->post($command);
+
+            if (!$response->is_success()) {
+                $io->error('API error: ' . $response->get_status_description());
+                return self::FAILURE;
+            }
+
+            $domains = $response->get_domains();
+
+            $rows = [];
+            foreach ($domains as $domain => $info) {
+                $rows[] = [
+                    $domain,
+                    $info['available'] ? '<fg=green>Yes</>' : '<fg=red>No</>',
+                    $info['fee_class'] ?? '-',
+                    isset($info['fee_amount']) ? '$' . number_format((float) $info['fee_amount'], 2) : '-',
+                    ($info['zone_is_active'] ?? false) ? 'Yes' : 'No',
+                    ($info['tld_in_maintenance'] ?? false) ? 'Yes' : 'No',
+                ];
+            }
+
+            $io->table(
+                ['Domain', 'Available', 'Fee Class', 'Price', 'Zone Active', 'TLD Maintenance'],
+                $rows
+            );
+        } catch (\Exception $e) {
+            $io->error('Error: ' . $e->getMessage());
+            return self::FAILURE;
+        }
+
+        return self::SUCCESS;
+    }
+}
