@@ -34,21 +34,24 @@ ln -s "$(pwd)/bin/dn" /usr/local/bin/dn
 
 The CLI needs two credentials: an API key and an API user.
 
-### Interactive setup (recommended)
+### Interactive setup
 
 ```bash
 dn configure
 ```
 
-This prompts for your credentials and saves them to `~/.config/dn/config.json`.
+This prompts for your credentials using hidden input (no echo) and saves them to `~/.config/dn/config.json`.
 
-You can also pass them directly, but note that command-line arguments may be visible in process listings and shell history:
+### Non-interactive setup
+
+For scripts and CI/CD, pipe credentials via stdin (one per line: API key, then API user):
 
 ```bash
-dn configure --api-key=YOUR_KEY --api-user=YOUR_USER
-```
+printf '%s\n%s\n' "$DN_API_KEY" "$DN_API_USER" | dn configure --stdin
 
-For automated setups, prefer environment variables over CLI flags to avoid exposing credentials in process listings.
+# With a custom API URL
+printf '%s\n%s\n' "$KEY" "$USER" | dn configure --stdin --api-url=https://custom.example.com
+```
 
 ### Environment variables
 

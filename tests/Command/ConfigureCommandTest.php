@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DnCli\Tests\Command;
 
 use DnCli\Command\ConfigureCommand;
-use DnCli\Config\ConfigManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -66,13 +65,11 @@ class ConfigureCommandTest extends TestCase
         return new CommandTester($app->find('configure'));
     }
 
-    public function test_configure_with_options(): void
+    public function test_configure_via_stdin(): void
     {
         $tester = $this->createTester();
-        $tester->execute([
-            '--api-key' => 'my-key',
-            '--api-user' => 'my-user',
-        ], ['interactive' => false]);
+        $tester->setInputs(['my-key', 'my-user']);
+        $tester->execute(['--stdin' => true]);
 
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('Configuration saved', $tester->getDisplay());
@@ -85,19 +82,29 @@ class ConfigureCommandTest extends TestCase
         $this->assertSame('my-user', $data['api_user']);
     }
 
-    public function test_configure_with_api_url(): void
+    public function test_configure_stdin_with_api_url(): void
     {
         $tester = $this->createTester();
+        $tester->setInputs(['key', 'user']);
         $tester->execute([
-            '--api-key' => 'key',
-            '--api-user' => 'user',
+            '--stdin' => true,
             '--api-url' => 'https://custom.api.com',
-        ], ['interactive' => false]);
+        ]);
 
         $this->assertSame(0, $tester->getStatusCode());
 
         $data = json_decode(file_get_contents($this->tempDir . '/.config/dn/config.json'), true);
         $this->assertSame('https://custom.api.com', $data['api_url']);
+    }
+
+    public function test_configure_stdin_empty_fails(): void
+    {
+        $tester = $this->createTester();
+        $tester->setInputs(['', '']);
+        $tester->execute(['--stdin' => true]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('required', $tester->getDisplay());
     }
 
     public function test_configure_interactive(): void
@@ -117,11 +124,21 @@ class ConfigureCommandTest extends TestCase
     {
         // ConfigureCommand should work even when not configured
         $tester = $this->createTester();
-        $tester->execute([
-            '--api-key' => 'key',
-            '--api-user' => 'user',
-        ], ['interactive' => false]);
+        $tester->setInputs(['key', 'user']);
+        $tester->execute(['--stdin' => true]);
 
         $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function test_success_message_does_not_reveal_config_path(): void
+    {
+        $tester = $this->createTester();
+        $tester->setInputs(['key', 'user']);
+        $tester->execute(['--stdin' => true]);
+
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('Configuration saved', $output);
+        $this->assertStringNotContainsString('config.json', $output);
+        $this->assertStringNotContainsString('.config/dn', $output);
     }
 }
