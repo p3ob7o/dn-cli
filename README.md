@@ -7,7 +7,7 @@ A command-line tool for managing domains via the Automattic Domain Services API.
 ### Composer (global)
 
 ```bash
-composer global require automattic/dn-cli
+composer global require p3ob7o/dn-cli
 ```
 
 Make sure `~/.composer/vendor/bin` (or `~/.config/composer/vendor/bin`) is in your `PATH`:
@@ -19,7 +19,7 @@ export PATH="$HOME/.composer/vendor/bin:$PATH"
 ### From source
 
 ```bash
-git clone https://github.com/Automattic/dn-cli.git
+git clone https://github.com/p3ob7o/dn-cli.git
 cd dn-cli
 composer install
 ```

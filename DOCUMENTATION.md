@@ -55,7 +55,7 @@ bin/dn  →  Application  →  Command  →  ApiClientFactory  →  Api  →  DS
 
 ## Distribution
 
-- **Composer global**: `composer global require automattic/dn-cli`
+- **Composer global**: `composer global require p3ob7o/dn-cli`
 - **From source**: `git clone` + `composer install` + `./bin/dn`
 - Entry point `bin/dn` handles both autoloader paths
 
