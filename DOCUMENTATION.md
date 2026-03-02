@@ -34,9 +34,9 @@ bin/dn  →  Application  →  Command  →  ApiClientFactory  →  Api  →  DS
 | `configure` | ConfigureCommand | both | Set up credentials + mode (`--mode partner\|user`, `--stdin`, OAuth flow) |
 | `check` | CheckCommand | both | Check domain availability and pricing |
 | `suggest` | SuggestCommand | both | Get domain name suggestions |
-| `register` | RegisterCommand | both | Register a domain (partner: direct, user: add to cart + checkout) |
+| `register` | RegisterCommand | both | Register a domain (partner: direct, user: add to cart + print checkout link). `--site` for site-bound cart |
 | `cart` | CartCommand | user | View WordPress.com shopping cart |
-| `checkout` | CheckoutCommand | user | Open WordPress.com checkout (`--site` option) |
+| `checkout` | CheckoutCommand | user | Open WordPress.com checkout in browser. `--site` for site-bound checkout |
 | `info` | InfoCommand | partner | Domain details: dates, contacts, nameservers, EPP status |
 | `renew` | RenewCommand | partner | Renew a domain registration |
 | `delete` | DeleteCommand | partner | Delete a domain (with confirmation) |
@@ -52,7 +52,7 @@ Partner-only commands redirect to wordpress.com/domains in user mode.
 
 ## Test Suite
 
-- **167 tests, 328 assertions** — all passing, zero deprecations
+- **169 tests, 337 assertions** — all passing, zero deprecations
 - **Fully mocked** — no API credentials needed to run tests
 - **Coverage**: every command (success, API error, exception, unconfigured state, user-mode paths), ConfigManager (env vars, file I/O, permissions, caching, mode + OAuth), ApiClientFactory, WPcomClientFactory, Application (command registration)
 - **Security tests**: credential redaction (API key, user, OAuth token), TOCTOU permission fix, HTTP URL rejection, config path non-disclosure
@@ -74,13 +74,14 @@ Partner-only commands redirect to wordpress.com/domains in user mode.
 
 ## Current Status
 
-- All 16 commands implemented and tested (167 tests passing)
+- All 16 commands implemented and tested (169 tests passing)
 - Dual-mode architecture: partner mode (Domain Services API) and user mode (WordPress.com OAuth)
 - OAuth flow working with client ID 134319, fixed port 19851
+- Cart POST body matches Calypso expectations (correct product slugs, domain-only flags)
 - Security review completed with all findings resolved
 - GPL-2.0 license file added, package published as p3ob7o/dn-cli
 
 ### Known Issues / Next Steps
 
-- **Cart checkout flow**: The `dn register` (user mode) cart POST body needs fixes — missing `blog_id: 0`, `is_domain_registration: true`, `extra.isDomainOnlySitelessCheckout: true`, and wrong product slug. See memory file `wpcom-cart-checkout.md` for Calypso research findings.
-- **UX preference**: `dn register` should show checkout URL to user instead of auto-opening browser. `dn checkout` same — print link, let user decide.
+- **Cart persistence**: Domain-only checkout (`no-site`) may still show empty cart — needs end-to-end verification with a real purchase flow
+- **Token expiry**: WPCOM implicit grant tokens expire; follow-up: detect 401 in WPcomClient and suggest re-running `dn configure`
