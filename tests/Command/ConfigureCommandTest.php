@@ -69,10 +69,10 @@ class ConfigureCommandTest extends TestCase
         return new CommandTester($app->find('configure'));
     }
 
-    public function test_configure_via_stdin(): void
+    public function test_configure_via_stdin_defaults_to_user_mode(): void
     {
         $tester = $this->createTester();
-        $tester->setInputs(['my-key', 'my-user']);
+        $tester->setInputs(['my-oauth-token']);
         $tester->execute(['--stdin' => true]);
 
         $this->assertSame(0, $tester->getStatusCode());
@@ -82,9 +82,8 @@ class ConfigureCommandTest extends TestCase
         $this->assertFileExists($configFile);
 
         $data = json_decode(file_get_contents($configFile), true);
-        $this->assertSame('my-key', $data['api_key']);
-        $this->assertSame('my-user', $data['api_user']);
-        $this->assertSame('partner', $data['mode']);
+        $this->assertSame('user', $data['mode']);
+        $this->assertSame('my-oauth-token', $data['oauth_token']);
     }
 
     public function test_configure_stdin_with_api_url(): void
@@ -92,6 +91,7 @@ class ConfigureCommandTest extends TestCase
         $tester = $this->createTester();
         $tester->setInputs(['key', 'user']);
         $tester->execute([
+            '--mode' => 'partner',
             '--stdin' => true,
             '--api-url' => 'https://custom.api.com',
         ]);

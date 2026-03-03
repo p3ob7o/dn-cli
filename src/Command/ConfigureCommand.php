@@ -46,8 +46,8 @@ class ConfigureCommand extends BaseCommand
             $this->showCommandOverview($io, $mode);
         }
 
-        // Default to partner for backward compatibility (stdin without --mode)
-        $mode = $mode ?? 'partner';
+        // Default to user mode when no mode specified (e.g. stdin without --mode)
+        $mode = $mode ?? 'user';
 
         if ($mode === 'user') {
             return $this->handleUserMode($input, $io);
@@ -59,30 +59,32 @@ class ConfigureCommand extends BaseCommand
     private function showSplashScreen(SymfonyStyle $io): void
     {
         $io->writeln('');
-        $io->writeln('  <fg=white;options=bold>dn-cli</> by Automattic');
-        $io->writeln('<fg=gray>  Domain Name CLI — Manage domains from your terminal.</>');
-        $io->writeln('');
-        $io->writeln('  Choose an authentication mode to get started.');
-        $io->writeln('');
-        $io->writeln('  <fg=yellow;options=bold>[P] Partner Mode</>');
-        $io->writeln('      Direct API access via Automattic Domain Services.');
-        $io->writeln('      <fg=gray>Requires:</>  API Key + API User credentials');
-        $io->writeln('      <fg=gray>Best for:</>  Registrars, resellers, and API integrations');
-        $io->writeln('');
-        $io->writeln('  <fg=yellow;options=bold>[U] User Mode</>');
-        $io->writeln('      WordPress.com OAuth authentication.');
-        $io->writeln('      <fg=gray>Requires:</>  WordPress.com account');
-        $io->writeln('      <fg=gray>Best for:</>  Personal domain management and purchases');
+        $io->writeln('            ##########             <options=bold>dn-cli</> by Automattic');
+        $io->writeln('        ##################');
+        $io->writeln('      #####            #####       <fg=gray>Domain Name CLI — Manage domains from your terminal.</>');
+        $io->writeln('    #####                #####');
+        $io->writeln('   ####          ####      ####    <fg=yellow;options=bold>[U] User Mode</>');
+        $io->writeln('  ####          ####        ####       WordPress.com OAuth authentication.');
+        $io->writeln('  ####         ####         ####       <fg=gray>Requires:</>  WordPress.com account');
+        $io->writeln('  ####        ####          ####       <fg=gray>Best for:</>  Personal domain management and purchases');
+        $io->writeln('   ####      ####          ####');
+        $io->writeln('    #####                #####     <fg=yellow;options=bold>[P] Partner Mode</>');
+        $io->writeln('      #####            #####           Direct API access via Automattic Domain Services.');
+        $io->writeln('        ##################             <fg=gray>Requires:</>  API Key + API User credentials');
+        $io->writeln('            ##########                 <fg=gray>Best for:</>  Registrars, resellers, and API integrations');
         $io->writeln('');
     }
 
     private function askMode(SymfonyStyle $io): string
     {
-        return $io->choice(
-            'Select mode (type <fg=yellow>P</> or <fg=yellow>U</>, or use arrow keys)',
-            ['partner', 'user'],
-            'partner'
+        $modes = ['U' => 'user', 'P' => 'partner'];
+        $key = $io->choice(
+            'Select mode (type <fg=yellow>U</> or <fg=yellow>P</>, or use arrow keys)',
+            $modes,
+            'user'
         );
+
+        return $modes[$key] ?? $key;
     }
 
     private function showCommandOverview(SymfonyStyle $io, string $mode): void
