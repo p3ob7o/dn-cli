@@ -137,7 +137,6 @@ class ConfigureCommandTest extends TestCase
         // Splash screen elements
         $this->assertStringContainsString('dn-cli by Automattic', $output);
         $this->assertStringContainsString('Domain Name CLI', $output);
-        $this->assertStringContainsString('/ / \\', $output); // Automattic logo O with pen
         $this->assertStringContainsString('Partner Mode', $output);
         $this->assertStringContainsString('User Mode', $output);
         $this->assertStringContainsString('Direct API access', $output);

@@ -59,11 +59,8 @@ class ConfigureCommand extends BaseCommand
     private function showSplashScreen(SymfonyStyle $io): void
     {
         $io->writeln('');
-        $io->writeln('<fg=cyan>     ___</>');
-        $io->writeln('<fg=cyan>    / </><fg=blue>/</><fg=cyan> \    </><fg=white;options=bold>dn-cli</> by Automattic');
-        $io->writeln('<fg=cyan>   | </><fg=blue>/</><fg=cyan>   |</>   Domain Name CLI');
-        $io->writeln('<fg=cyan>   |</><fg=blue>/</><fg=cyan>    |</>   <fg=gray>Manage domains from your terminal.</>');
-        $io->writeln('<fg=cyan>    \___/</>');
+        $io->writeln('  <fg=white;options=bold>dn-cli</> by Automattic');
+        $io->writeln('<fg=gray>  Domain Name CLI — Manage domains from your terminal.</>');
         $io->writeln('');
         $io->writeln('  Choose an authentication mode to get started.');
         $io->writeln('');
