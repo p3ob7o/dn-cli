@@ -1,6 +1,6 @@
-# dn — Domain Services CLI
+# dn — Domain Name CLI
 
-A command-line tool for managing domains via the Automattic Domain Services API. Check availability, register domains, manage DNS, configure privacy, and more — all from your terminal.
+Manage domains from your terminal. `dn` works in two modes: directly through the Automattic Domain Services API (partner mode), or through WordPress.com (user mode).
 
 ## Installation
 
@@ -30,98 +30,97 @@ Then run with `./bin/dn` or symlink it into your PATH:
 ln -s "$(pwd)/bin/dn" /usr/local/bin/dn
 ```
 
-## Configuration
+## Setup
 
-The CLI needs two credentials: an API key and an API user.
+Run `dn configure` to pick a mode and authenticate:
 
-### Interactive setup
+- **User mode** — WordPress.com OAuth. Requires a WordPress.com account.
+- **Partner mode** — Automattic Domain Services API. Requires an API key and API user.
 
-```bash
-dn configure
-```
-
-This prompts for your credentials using hidden input (no echo) and saves them to `~/.config/dn/config.json`.
+Your mode determines which commands are available. User mode covers domain search and purchase through WordPress.com checkout. Partner mode gives you the full set: registration, DNS, contacts, privacy, transfers.
 
 ### Non-interactive setup
 
-For scripts and CI/CD, pipe credentials via stdin (one per line: API key, then API user):
+Pipe credentials via stdin for scripts and CI/CD:
 
 ```bash
-printf '%s\n%s\n' "$DN_API_KEY" "$DN_API_USER" | dn configure --stdin
+# Partner mode
+printf '%s\n%s\n' "$DN_API_KEY" "$DN_API_USER" | dn configure --mode=partner --stdin
 
-# With a custom API URL
-printf '%s\n%s\n' "$KEY" "$USER" | dn configure --stdin --api-url=https://custom.example.com
+# User mode (pipe an OAuth token)
+printf '%s\n' "$DN_OAUTH_TOKEN" | dn configure --mode=user --stdin
 ```
 
 ### Environment variables
 
-Set `DN_API_KEY` and `DN_API_USER` in your shell. These take priority over the config file:
+Environment variables override the config file:
 
 ```bash
+# Partner mode
 export DN_API_KEY="your-api-key"
 export DN_API_USER="your-api-user"
-```
+export DN_API_URL="https://custom-endpoint.example.com/command"  # optional
 
-Optionally, override the API endpoint:
+# User mode
+export DN_OAUTH_TOKEN="your-oauth-token"
 
-```bash
-export DN_API_URL="https://custom-endpoint.example.com/command"
+# Override mode regardless of config file
+export DN_MODE="user"  # or "partner"
 ```
 
 ### Config file
 
-Stored at `~/.config/dn/config.json` with mode `0600`:
+Stored at `~/.config/dn/config.json` with `0600` permissions:
 
 ```json
 {
+    "mode": "partner",
     "api_key": "your-api-key",
     "api_user": "your-api-user"
 }
 ```
 
-### Credential resolution order
+```json
+{
+    "mode": "user",
+    "oauth_token": "your-oauth-token"
+}
+```
 
-1. Environment variables (`DN_API_KEY`, `DN_API_USER`)
-2. Config file (`~/.config/dn/config.json`)
+To remove stored credentials:
 
-If no credentials are found, the CLI will prompt you to run `dn configure`.
+```bash
+dn reset
+```
 
 ## Commands
 
 ### Check domain availability
 
-```bash
-# Single domain
-dn check example.com
+Both modes.
 
-# Multiple domains at once
+```bash
+dn check example.com
 dn check example.com example.net example.org
 ```
 
-Returns a table with availability, pricing, fee class, and TLD status.
-
 ### Get domain suggestions
 
+Both modes.
+
 ```bash
-# Basic suggestions
 dn suggest "coffee shop"
 
-# Filter by TLDs and limit count
+# Filter by TLDs and limit results
 dn suggest "coffee" --tlds=com,net,io --count=20
 
 # Exact match only
 dn suggest "mycoffee" --exact
 ```
 
-### Domain information
-
-```bash
-dn info example.com
-```
-
-Displays registration dates, expiration, nameservers, contacts, EPP status codes, privacy settings, and auth code.
-
 ### Register a domain
+
+In **partner mode**, registers the domain directly:
 
 ```bash
 # Interactive — prompts for contact details
@@ -142,110 +141,91 @@ dn register newdomain.com \
   --privacy=on
 ```
 
-Options:
-- `--period` — Registration years (default: 1)
-- `--privacy` — `on` (default), `off`, or `redact`
-- `--price` — Required for premium domains (in cents)
+In **user mode**, adds the domain to your WordPress.com cart and prints a checkout link:
 
-### Renew a domain
+```bash
+dn register newdomain.com
+
+# With a specific site
+dn register newdomain.com --site=mysite.wordpress.com
+```
+
+### Cart and checkout (user mode)
+
+```bash
+dn cart
+dn checkout
+dn checkout --site=mysite.wordpress.com
+```
+
+`dn register` adds to cart, `dn cart` shows what's in it, `dn checkout` opens WordPress.com checkout in your browser.
+
+### Domain information
+
+Partner mode. In user mode, points you to WordPress.com.
+
+```bash
+dn info example.com
+```
+
+### Partner mode commands
+
+The remaining commands are partner mode only. In user mode, they'll point you to WordPress.com where you can manage these settings.
 
 ```bash
 dn renew example.com --expiration-year=2026 --period=1
-```
-
-The `--expiration-year` is the domain's current expiration year (required).
-
-### Delete a domain
-
-```bash
 dn delete example.com
-```
-
-Prompts for confirmation before proceeding.
-
-### Restore a deleted domain
-
-```bash
 dn restore example.com
-```
-
-### Transfer a domain
-
-```bash
-# Interactive — prompts for auth code and contacts
-dn transfer example.com
-
-# With auth code
 dn transfer example.com --auth-code=ABC123XYZ
 ```
 
-### DNS management
+#### DNS
 
 ```bash
-# View all DNS records
 dn dns:get example.com
-
-# Set a DNS record
 dn dns:set example.com --type=A --name=@ --value=1.2.3.4 --ttl=3600
-
-# Multiple values for the same record
 dn dns:set example.com --type=A --name=@ --value=1.2.3.4 --value=5.6.7.8
 ```
 
 Supported record types: `A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `MX`, `NS`, `PTR`, `TXT`, `SRV`.
 
-### Update contacts
+#### Contacts, privacy, transfer lock
 
 ```bash
-# Interactive
 dn contacts:set example.com
-
-# Specify contact type
 dn contacts:set example.com --type=admin --first-name=Jane --last-name=Doe --email=admin@example.com
 
-# Opt out of automatic transfer lock after contact change
-dn contacts:set example.com --transferlock-opt-out
-```
+dn privacy example.com on      # enable privacy service
+dn privacy example.com off     # disclose contact info
+dn privacy example.com redact  # redact contact info
 
-Contact types: `owner`, `admin`, `tech`, `billing`.
-
-### WHOIS privacy
-
-```bash
-dn privacy example.com on     # Enable privacy service
-dn privacy example.com off    # Disclose contact info
-dn privacy example.com redact # Redact contact info
-```
-
-### Transfer lock
-
-```bash
 dn transferlock example.com on
 dn transferlock example.com off
 ```
 
 ## Command reference
 
-| Command | Description |
-|---|---|
-| `dn configure` | Set up API credentials |
-| `dn check <domain>...` | Check availability and pricing |
-| `dn suggest <query>` | Get domain name suggestions |
-| `dn info <domain>` | Domain details and status |
-| `dn register <domain>` | Register a new domain |
-| `dn renew <domain>` | Renew registration |
-| `dn delete <domain>` | Delete a domain |
-| `dn restore <domain>` | Restore a deleted domain |
-| `dn transfer <domain>` | Transfer a domain in |
-| `dn dns:get <domain>` | View DNS records |
-| `dn dns:set <domain>` | Set DNS records |
-| `dn contacts:set <domain>` | Update contact information |
-| `dn privacy <domain> <on\|off\|redact>` | WHOIS privacy settings |
-| `dn transferlock <domain> <on\|off>` | Transfer lock control |
+| Command | Mode | Description |
+|---|---|---|
+| `dn configure` | — | Set up credentials and select mode |
+| `dn reset` | — | Remove stored configuration |
+| `dn check <domain>...` | both | Check availability and pricing |
+| `dn suggest <query>` | both | Get domain name suggestions |
+| `dn register <domain>` | both | Register a domain (partner) or add to cart (user) |
+| `dn cart` | user | View your shopping cart |
+| `dn checkout` | user | Open WordPress.com checkout in browser |
+| `dn info <domain>` | partner | Domain details and status |
+| `dn renew <domain>` | partner | Renew registration |
+| `dn delete <domain>` | partner | Delete a domain |
+| `dn restore <domain>` | partner | Restore a deleted domain |
+| `dn transfer <domain>` | partner | Transfer a domain in |
+| `dn dns:get <domain>` | partner | View DNS records |
+| `dn dns:set <domain>` | partner | Set DNS records |
+| `dn contacts:set <domain>` | partner | Update contact information |
+| `dn privacy <domain> <on\|off\|redact>` | partner | WHOIS privacy settings |
+| `dn transferlock <domain> <on\|off>` | partner | Transfer lock control |
 
 ## Shell completion
-
-Generate completions for your shell:
 
 ```bash
 # Bash
