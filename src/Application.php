@@ -16,6 +16,7 @@ use DnCli\Command\InfoCommand;
 use DnCli\Command\PrivacySetCommand;
 use DnCli\Command\RegisterCommand;
 use DnCli\Command\RenewCommand;
+use DnCli\Command\ResetCommand;
 use DnCli\Command\RestoreCommand;
 use DnCli\Command\SuggestCommand;
 use DnCli\Command\TransferCommand;
@@ -44,5 +45,6 @@ class Application extends ConsoleApplication
         $this->add(new TransferlockCommand());
         $this->add(new CartCommand());
         $this->add(new CheckoutCommand());
+        $this->add(new ResetCommand());
     }
 }

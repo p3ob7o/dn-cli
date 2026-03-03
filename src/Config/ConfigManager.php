@@ -78,6 +78,19 @@ class ConfigManager
         ]);
     }
 
+    public function delete(): bool
+    {
+        $path = $this->getConfigPath();
+
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        $this->config = null;
+
+        return true;
+    }
+
     private function writeConfig(array $data): void
     {
         $path = $this->getConfigPath();

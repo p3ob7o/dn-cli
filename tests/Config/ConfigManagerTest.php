@@ -395,4 +395,35 @@ class ConfigManagerTest extends TestCase
         $data = json_decode(file_get_contents($path), true);
         $this->assertSame('partner', $data['mode']);
     }
+
+    public function test_delete_removes_config_file(): void
+    {
+        $config = new ConfigManager();
+        $config->save('key', 'user');
+
+        $path = $config->getConfigPath();
+        $this->assertFileExists($path);
+
+        $config->delete();
+
+        $this->assertFileDoesNotExist($path);
+    }
+
+    public function test_delete_resets_cached_config(): void
+    {
+        $config = new ConfigManager();
+        $config->save('key', 'user');
+        $this->assertSame('key', $config->getApiKey());
+
+        $config->delete();
+
+        $this->assertNull($config->getApiKey());
+        $this->assertFalse($config->isConfigured());
+    }
+
+    public function test_delete_succeeds_when_no_config_exists(): void
+    {
+        $config = new ConfigManager();
+        $this->assertTrue($config->delete());
+    }
 }

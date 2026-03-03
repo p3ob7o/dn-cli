@@ -53,6 +53,7 @@ class ApplicationTest extends TestCase
             'transferlock' => ['transferlock'],
             'cart' => ['cart'],
             'checkout' => ['checkout'],
+            'reset' => ['reset'],
         ];
     }
 
@@ -65,6 +66,6 @@ class ApplicationTest extends TestCase
             return !in_array($cmd->getName(), ['help', 'list', 'completion', '_complete']);
         });
 
-        $this->assertCount(16, $custom);
+        $this->assertCount(17, $custom);
     }
 }
